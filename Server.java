@@ -2,28 +2,42 @@ package com.company;
 
 import java.net.*;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class Server {
-    private static final int PORT = 9090;
+    private ServerSocket serverSocket;
 
-    private static ArrayList<ClientHandler> clients = new ArrayList<>();
-    private static ExecutorService pool = Executors.newFixedThreadPool(4);
+    public Server(ServerSocket serverSocket) {
+        this.serverSocket = serverSocket;
+    }
 
-    public static void main(String[] args) throws IOException {
-        ServerSocket listener = new ServerSocket(PORT);
+    public void startServer() {
+        try {
+            while (!serverSocket.isClosed()) {
+                Socket socket = serverSocket.accept();
+                System.out.println("A new client has connected!");
+                ClientHandler clientHandler = new ClientHandler(socket);
 
-        while(true) {
-            System.out.println("Waiting for client connection");
-            Socket client = listener.accept();
-            System.out.println("Connected to client");
-            ClientHandler clientThread = new ClientHandler(client);
-            clients.add(clientThread);
+                Thread thread = new Thread(clientHandler);
+                thread.start();
+            }
+        } catch (IOException e) {
 
-            pool.execute(clientThread);
         }
     }
 
+    public void closeServerSocket() {
+        try {
+            if (serverSocket != null) {
+                serverSocket.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        ServerSocket serverSocket = new ServerSocket(1234);
+        Server server = new Server(serverSocket);
+        server.startServer();
+    }
 }
